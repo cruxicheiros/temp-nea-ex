@@ -2,13 +2,13 @@
 var options = {
     mode : "create",  // create, label, draw, move, select, measure
     strokeColor: 'black',
-    focusStrokeColor: 'red',
-    fillColor: 'white'
+    fillColor: 'white',
+    highlightColor: 'red'
 };
 
 var state = {
-    shapes : new Layer([]),
     drawings : new Layer([]),
+    shapes : new Layer([]),
     playerOverlay: new Layer([]),
     measuringLine: null,
     focus : null,
@@ -21,17 +21,20 @@ var state = {
 
             if (dataDescription.type = "circle") {
                 for (var j = 0; j < this.shapes.children.length; j++) {
-                    if (this.shapes.children[j].data.uniqueID === dataDescription.type) {
+                    if (this.shapes.children[j].data.uniqueID === dataDescription.uniqueID) {
                         this.shapes.children[j].remove();
                     }
                 }
+
+                console.log(dataDescription.data.fillColor);
 
                 this.shapes.addChild(
                     createCircle(
                         new Point(dataDescription.data.x, dataDescription.data.y),
                         dataDescription.data.radius,
                         dataDescription.data.strokeColor,
-                        dataDescription.data.fillColor,
+                        dataDescription.data.strokeWidth,
+                        new Color(dataDescription.data.fillColor.red, dataDescription.data.fillColor.green, dataDescription.data.fillColor.blue),
                         dataDescription.uniqueID,
                         dataDescription.versionNumber
                     )
@@ -57,18 +60,21 @@ var genUniqueID = function () {  // Source: https://stackoverflow.com/a/44078785
 
 window.globals = globals;
 
-var createCircle = function (center, radius, strokeColor, fillColor, uniqueID, versionNumber) {
+var createCircle = function (center, radius, strokeColor, strokeWidth, fillColor, uniqueID, versionNumber, labelText) {
     var newCircle = new Path.Circle({
         center: center,
         radius: radius
     });
 
     newCircle.strokeColor = strokeColor;
+    newCircle.strokeWidth = strokeWidth;
     newCircle.fillColor = fillColor;
     newCircle.data.radius = radius;
     newCircle.data.type = "circle";
 
-    if (typeof uniqueID === "undefined") {
+    newCircle.data.highlighted = false;
+
+    if (typeof uniqueID === "undefined") {   // these blocks are necessary because paperscript doesn't support default args so I have to polyfill them
         newCircle.data.uniqueID = genUniqueID();
     } else {
         newCircle.data.uniqueID = uniqueID
@@ -84,12 +90,32 @@ var createCircle = function (center, radius, strokeColor, fillColor, uniqueID, v
         if (options.mode === 'move') {
             this.position += event.delta;
             this.data.versionNumber += 1;
+
+            state.focus = this;
+        } else if (options.mode === 'recolor') {
+            this.fillColor.saturation = 0.5;
+            this.fillColor.brightness = 0.5;
+            this.fillColor.hue += 5;
+
+            this.data.versionNumber += 1;
             state.focus = this;
         }
     };
 
     newCircle.onMouseDown = function (event) {
-        if (options.mode === 'select') {
+        if (options.mode === 'highlight') {
+            if (this.data.highlighted === true) {
+                this.strokeColor = options.strokeColor;
+                this.strokeWidth = 1;
+                this.data.highlighted = false;
+
+            } else {
+                this.strokeColor = options.highlightColor;
+                this.strokeWidth = 10;
+                this.data.highlighted = true;
+            }
+
+            this.data.versionNumber += 1;
             state.focus = this;
         }
     };
@@ -112,7 +138,7 @@ function onMouseDown(event) {
 
     } else if (options.mode === 'create') {
         state.shapes.activate();
-        state.focus = createCircle(event.point, 20, options.strokeColor, options.fillColor);
+        state.focus = createCircle(event.point, 20, options.strokeColor, 1, options.fillColor);
 
     } else if (options.mode === 'measure') {
         state.playerOverlay.activate();

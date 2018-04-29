@@ -8,6 +8,7 @@ var paperPackager = {
             data: {
                 x: paperPath.position.x,
                 y: paperPath.position.y,
+                strokeWidth: paperPath.strokeWidth,
                 strokeColor: {
                     red: paperPath.strokeColor.red,
                     green: paperPath.strokeColor.green,
@@ -18,7 +19,13 @@ var paperPackager = {
         
         if (packet.type === "circle") {
             packet.data.radius = paperPath.data.radius;
-            packet.data.fillColor = paperPath.fillColor;
+            packet.data.highlighted = paperPath.data.highlighted;
+
+            packet.data.fillColor = {
+                red : paperPath.fillColor.red,
+                green: paperPath.fillColor.green,
+                blue: paperPath.fillColor.blue
+            };
 
         } else if (packet.type === "drawing") {
             packet.data.segments = [];

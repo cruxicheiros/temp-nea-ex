@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="style.css">
     <script>
         var globals = {};
-        var socket = new WebSocket("ws://localhost:8080", 'n20-protocol');
+        var socket = null;
 
         var genUniqueID = function () {  // Source: https://stackoverflow.com/a/44078785
             return Math.random().toString(36).substring(2) + (new Date()).getTime().toString(36);
